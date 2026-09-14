@@ -7,8 +7,7 @@ const rateLimiter = require( "../middleware/rateLimiter" );
 router.get(
   "/", rateLimiter,(req, res) => {
     res.json({
-      message:
-        "API Success"
+      message: "API Success"
     });
   }
 );
