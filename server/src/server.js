@@ -27,6 +27,11 @@ app.use(
   "/api/test", require("./routes/testRoutes")
 );
 
+app.use(
+  "/api/analytics",
+  require("./routes/analyticsRoutes")
+);
+
 app.get("/", (req, res) => {
   res.send("API Running");
 });
