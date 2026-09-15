@@ -6,11 +6,11 @@ const getDashboardSummary = async (req, res) => {
     const totalRequests = await RequestLog.countDocuments();
 
     const successfulRequests = await RequestLog.countDocuments({
-      status: 200,
+      status: "SUCCESS",
     });
 
     const blockedRequests = await RequestLog.countDocuments({
-      status: 429,
+      status: "BLOCKED",
     });
 
     res.json({
