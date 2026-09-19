@@ -87,8 +87,29 @@ const getRequestsPerDay = async (req, res) => {
   }
 };
 
+// Request Logs
+const getRequestLogs = async (req, res) => {
+  try {
+
+    const logs = await RequestLog
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.json(logs);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message,
+    });
+
+  }
+};
+
 module.exports = {
   getDashboardSummary,
   getTopApiKeys,
   getRequestsPerDay,
+  getRequestLogs,
 };

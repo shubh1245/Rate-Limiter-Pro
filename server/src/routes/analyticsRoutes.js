@@ -5,22 +5,16 @@ const router = express.Router();
 const {
   getDashboardSummary,
   getTopApiKeys,
-  getRequestsPerDay
+  getRequestsPerDay,
+  getRequestLogs
 } = require("../controllers/analyticsController");
 
-router.get(
-  "/summary",
-  getDashboardSummary
-);
+router.get("/summary", getDashboardSummary);
 
-router.get(
-  "/top-keys",
-  getTopApiKeys
-);
+router.get("/top-keys", getTopApiKeys);
 
-router.get(
-  "/requests-per-day",
-  getRequestsPerDay
-);
+router.get("/requests-per-day", getRequestsPerDay);
+
+router.get("/logs", getRequestLogs);
 
 module.exports = router;
