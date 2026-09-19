@@ -107,9 +107,34 @@ const getRequestLogs = async (req, res) => {
   }
 };
 
+const getEndpointAnalytics = async (req, res) => {
+  try {
+
+    const endpointData =
+      await RequestLog.aggregate([
+        {
+          $group: {
+            _id: "$endpoint",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+    res.json(endpointData);
+
+  } catch (error) {
+
+    res.status(500).json({
+      message: error.message
+    });
+
+  }
+};
+
 module.exports = {
   getDashboardSummary,
   getTopApiKeys,
   getRequestsPerDay,
   getRequestLogs,
+  getEndpointAnalytics
 };
