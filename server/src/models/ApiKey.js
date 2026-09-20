@@ -1,34 +1,45 @@
 const mongoose = require("mongoose");
 
 const apiKeySchema = new mongoose.Schema(
-    {
-      userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-      },
-
-      key: {
-        type: String,
-        unique: true
-      },
-
-      limit: {
-        type: Number,
-        default: 10
-      },
-
-      window: {
-        type: Number,
-        default: 60
-      }
+  {
+    name: {
+      type: String,
+      default: "Default API Key",
     },
-    {
-      timestamps: true
-    }
-  );
 
-module.exports =
-  mongoose.model(
-    "ApiKey",
-    apiKeySchema
-  );
+    key: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    totalRequests: {
+      type: Number,
+      default: 0,
+    },
+
+    successfulRequests: {
+      type: Number,
+      default: 0,
+    },
+
+    blockedRequests: {
+      type: Number,
+      default: 0,
+    },
+
+    lastUsed: {
+      type: Date,
+    },
+
+    status: {
+      type: String,
+      default: "Active",
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+module.exports = mongoose.model("ApiKey", apiKeySchema);

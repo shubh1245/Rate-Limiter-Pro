@@ -1,17 +1,26 @@
 const RequestLog = require("../models/RequestLog");
+const ApiKey = require("../models/ApiKey");
+
 
 // Dashboard Summary
-const getDashboardSummary = async (req, res) => {
+
+const getDashboardSummary = async (
+  req,
+  res
+) => {
   try {
-    const totalRequests = await RequestLog.countDocuments();
+    const totalRequests =
+      await RequestLog.countDocuments();
 
-    const successfulRequests = await RequestLog.countDocuments({
-      status: "SUCCESS",
-    });
+    const successfulRequests =
+      await RequestLog.countDocuments({
+        status: "SUCCESS",
+      });
 
-    const blockedRequests = await RequestLog.countDocuments({
-      status: "BLOCKED",
-    });
+    const blockedRequests =
+      await RequestLog.countDocuments({
+        status: "BLOCKED",
+      });
 
     res.json({
       totalRequests,
@@ -27,24 +36,31 @@ const getDashboardSummary = async (req, res) => {
 
 
 // Top API Keys
-const getTopApiKeys = async (req, res) => {
+
+const getTopApiKeys = async (
+  req,
+  res
+) => {
   try {
-    const topKeys = await RequestLog.aggregate([
-      {
-        $group: {
-          _id: "$apiKey",
-          requests: { $sum: 1 },
+    const topKeys =
+      await RequestLog.aggregate([
+        {
+          $group: {
+            _id: "$apiKey",
+            requests: {
+              $sum: 1,
+            },
+          },
         },
-      },
-      {
-        $sort: {
-          requests: -1,
+        {
+          $sort: {
+            requests: -1,
+          },
         },
-      },
-      {
-        $limit: 5,
-      },
-    ]);
+        {
+          $limit: 5,
+        },
+      ]);
 
     res.json(topKeys);
   } catch (error) {
@@ -55,29 +71,36 @@ const getTopApiKeys = async (req, res) => {
 };
 
 
-// Requests Per Day
-const getRequestsPerDay = async (req, res) => {
+// Daily Traffic Analytics
+
+const getRequestsPerDay = async (
+  req,
+  res
+) => {
   try {
-    const stats = await RequestLog.aggregate([
-      {
-        $group: {
-          _id: {
-            $dateToString: {
-              format: "%Y-%m-%d",
-              date: "$createdAt",
+    const stats =
+      await RequestLog.aggregate([
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format:
+                  "%Y-%m-%d",
+                date:
+                  "$createdAt",
+              },
+            },
+            requests: {
+              $sum: 1,
             },
           },
-          requests: {
-            $sum: 1,
+        },
+        {
+          $sort: {
+            _id: 1,
           },
         },
-      },
-      {
-        $sort: {
-          _id: 1,
-        },
-      },
-    ]);
+      ]);
 
     res.json(stats);
   } catch (error) {
@@ -87,54 +110,122 @@ const getRequestsPerDay = async (req, res) => {
   }
 };
 
-// Request Logs
-const getRequestLogs = async (req, res) => {
-  try {
 
-    const logs = await RequestLog
-      .find()
-      .sort({ createdAt: -1 })
-      .limit(100);
+// Request Logs
+
+const getRequestLogs = async (
+  req,
+  res
+) => {
+  try {
+    const logs =
+      await RequestLog.find()
+        .sort({
+          createdAt: -1,
+        })
+        .limit(100);
 
     res.json(logs);
-
   } catch (error) {
-
     res.status(500).json({
       message: error.message,
     });
-
   }
 };
 
-const getEndpointAnalytics = async (req, res) => {
-  try {
 
-    const endpointData =
-      await RequestLog.aggregate([
-        {
-          $group: {
-            _id: "$endpoint",
-            count: { $sum: 1 }
-          }
-        }
-      ]);
+// Endpoint Analytics
 
-    res.json(endpointData);
+const getEndpointAnalytics =
+  async (req, res) => {
+    try {
+      const endpointData =
+        await RequestLog.aggregate([
+          {
+            $group: {
+              _id: "$endpoint",
+              count: {
+                $sum: 1,
+              },
+            },
+          },
+          {
+            $sort: {
+              count: -1,
+            },
+          },
+          {
+            $limit: 10,
+          },
+        ]);
 
-  } catch (error) {
+      res.json(endpointData);
+    } catch (error) {
+      res.status(500).json({
+        message:
+          error.message,
+      });
+    }
+  };
 
-    res.status(500).json({
-      message: error.message
-    });
 
-  }
-};
+// API Key Analytics
+
+const getApiKeyAnalytics =
+  async (req, res) => {
+    try {
+      const apiKeys =
+        await ApiKey.find()
+          .sort({
+            createdAt: -1,
+          });
+
+      const analytics =
+        apiKeys.map((key) => ({
+          _id: key._id,
+
+          key: key.key,
+
+          totalRequests:
+            key.totalRequests || 0,
+
+          successfulRequests:
+            key.successfulRequests ||
+            0,
+
+          blockedRequests:
+            key.blockedRequests ||
+            0,
+
+          lastUsed:
+            key.lastUsed ||
+            "Never",
+
+          status:
+            key.status ||
+            "Active",
+
+          createdAt:
+            key.createdAt,
+        }));
+
+      res.json(analytics);
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        message:
+          "Failed to fetch API Key Analytics",
+      });
+    }
+  };
+
 
 module.exports = {
   getDashboardSummary,
   getTopApiKeys,
   getRequestsPerDay,
   getRequestLogs,
-  getEndpointAnalytics
+  getEndpointAnalytics,
+  getApiKeyAnalytics,
 };

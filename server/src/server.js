@@ -2,11 +2,14 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const http = require("http");
 
 const connectDB = require("./config/db");
-connectDB();
-
 const { connectRedis } = require("./config/redis");
+
+const { initSocket } = require("./socket/socket");
+
+connectDB();
 connectRedis();
 
 const app = express();
@@ -16,15 +19,18 @@ app.use(cors());
 app.use(express.json());
 
 app.use(
-  "/api/auth", require("./routes/authRoutes")
+  "/api/auth",
+  require("./routes/authRoutes")
 );
 
 app.use(
-  "/api/keys", require("./routes/apiKeyRoutes")
+  "/api/keys",
+  require("./routes/apiKeyRoutes")
 );
 
 app.use(
-  "/api/test", require("./routes/testRoutes")
+  "/api/test",
+  require("./routes/testRoutes")
 );
 
 app.use(
@@ -38,6 +44,15 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log( `Server running on ${PORT}`);
+// Create HTTP Server
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+initSocket(server);
+
+// Start Server
+server.listen(PORT, () => {
+  console.log(
+    `Server running on ${PORT}`
+  );
 });

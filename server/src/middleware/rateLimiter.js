@@ -1,10 +1,11 @@
 const ApiKey = require("../models/ApiKey");
 const RequestLog = require("../models/RequestLog");
 const { redisClient } = require("../config/redis");
+const { getIO } = require("../socket/socket");
 
 const rateLimiter = async (req, res, next) => {
   try {
-    // Get API Key from headers
+    // Get API Key
     const apiKey = req.header("x-api-key");
 
     if (!apiKey) {
@@ -13,8 +14,10 @@ const rateLimiter = async (req, res, next) => {
       });
     }
 
-    // Check API Key in MongoDB
-    const keyData = await ApiKey.findOne({ key: apiKey });
+    // Check API Key
+    const keyData = await ApiKey.findOne({
+      key: apiKey,
+    });
 
     if (!keyData) {
       return res.status(401).json({
@@ -27,13 +30,28 @@ const rateLimiter = async (req, res, next) => {
     // Redis Key
     const redisKey = `rate_limit:${apiKey}`;
 
-    // Get Current Count
-    let currentCount = await redisClient.get(redisKey);
+    // Current Count
+    let currentCount =
+      await redisClient.get(redisKey);
 
-    currentCount = currentCount ? parseInt(currentCount) : 0;
+    currentCount = currentCount
+      ? parseInt(currentCount)
+      : 0;
 
-    // Limit Exceeded
+    // BLOCKED REQUEST
     if (currentCount >= limit) {
+      await ApiKey.findByIdAndUpdate(
+        keyData._id,
+        {
+          $inc: {
+            totalRequests: 1,
+            blockedRequests: 1,
+          },
+          lastUsed: new Date(),
+        }
+      );
+
+      // Request Log
       await RequestLog.create({
         apiKey,
         endpoint: req.originalUrl,
@@ -42,20 +60,47 @@ const rateLimiter = async (req, res, next) => {
         ipAddress: req.ip,
       });
 
+      // Socket Event
+      getIO().emit(
+        "request-update",
+        {
+          type: "blocked",
+        }
+      );
+
       return res.status(429).json({
-        message: "Rate Limit Exceeded",
+        message:
+          "Rate Limit Exceeded",
       });
     }
 
     // Increment Count
-    await redisClient.set(redisKey, currentCount + 1);
+    await redisClient.set(
+      redisKey,
+      currentCount + 1
+    );
 
-    // Set Expiry (60 seconds)
+    // Expire After 60 Seconds
     if (currentCount === 0) {
-      await redisClient.expire(redisKey, 60);
+      await redisClient.expire(
+        redisKey,
+        60
+      );
     }
 
-    // Log Successful Request
+    // Update API Key Analytics
+    await ApiKey.findByIdAndUpdate(
+      keyData._id,
+      {
+        $inc: {
+          totalRequests: 1,
+          successfulRequests: 1,
+        },
+        lastUsed: new Date(),
+      }
+    );
+
+    // Request Log
     await RequestLog.create({
       apiKey,
       endpoint: req.originalUrl,
@@ -63,6 +108,14 @@ const rateLimiter = async (req, res, next) => {
       status: "SUCCESS",
       ipAddress: req.ip,
     });
+
+    // Socket Event
+    getIO().emit(
+      "request-update",
+      {
+        type: "success",
+      }
+    );
 
     next();
   } catch (error) {
