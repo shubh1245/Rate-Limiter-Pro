@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 const socket = io(
-  "http://localhost:5000"
+  "https://rate-limiter-pro-backend.onrender.com/"
 );
 
 export default socket;
