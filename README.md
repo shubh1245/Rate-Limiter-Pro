@@ -196,37 +196,6 @@ REDIS_URL=YOUR_REDIS_URL
 
 ---
 
-# 🚀 Installation
-
-## Clone Repository
-
-```bash
-git clone https://github.com/yourusername/RateLimiter-Pro.git
-
-cd RateLimiter-Pro
-```
-
-## Backend Setup
-
-```bash
-cd server
-
-npm install
-
-npm start
-```
-
-## Frontend Setup
-
-```bash
-cd client
-
-npm install
-
-npm run dev
-```
-
----
 
 # 📡 API Endpoints
 
