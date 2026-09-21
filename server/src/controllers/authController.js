@@ -5,7 +5,6 @@ const generateToken = require("../utils/generateToken");
 const { redisClient } = require("../config/redis");
 const sendOTPEmail = require("../utils/sendEmail");
 
-// REGISTER
 
 const register = async (req, res) => {
   try {
@@ -65,7 +64,7 @@ const register = async (req, res) => {
   }
 };
 
-// VERIFY OTP
+
 
 const verifyOTP = async (
   req,
@@ -89,8 +88,7 @@ const verifyOTP = async (
 
     if (!storedOTP) {
       return res.status(400).json({
-        message:
-          "OTP Expired",
+        message: "OTP Expired",
       });
     }
 
@@ -99,8 +97,7 @@ const verifyOTP = async (
       otp.toString()
     ) {
       return res.status(400).json({
-        message:
-          "Invalid OTP",
+        message: "Invalid OTP",
       });
     }
 
@@ -137,7 +134,7 @@ const verifyOTP = async (
   }
 };
 
-// RESEND OTP
+
 
 const resendOTP = async (
   req,
@@ -191,9 +188,141 @@ const resendOTP = async (
   }
 };
 
-// LOGIN
 
-const login = async (req, res) => {
+
+const forgotPassword = async (
+  req,
+  res
+) => {
+  try {
+    const { email } =
+      req.body;
+
+    const user =
+      await User.findOne({
+        email,
+      });
+
+    if (!user) {
+      return res.status(404).json({
+        message:
+          "User not found",
+      });
+    }
+
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+    await redisClient.set(
+      `resetotp:${email}`,
+      otp
+    );
+
+    await redisClient.expire(
+      `resetotp:${email}`,
+      300
+    );
+
+    await sendOTPEmail(
+      email,
+      otp
+    );
+
+    res.status(200).json({
+      message:
+        "Reset OTP sent successfully",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+
+const resetPassword = async (
+  req,
+  res
+) => {
+  try {
+    const {
+      email,
+      otp,
+      newPassword,
+    } = req.body;
+
+    if (
+      !email ||
+      !otp ||
+      !newPassword
+    ) {
+      return res.status(400).json({
+        message:
+          "All fields are required",
+      });
+    }
+
+    const storedOTP =
+      await redisClient.get(
+        `resetotp:${email}`
+      );
+
+    if (!storedOTP) {
+      return res.status(400).json({
+        message:
+          "OTP Expired",
+      });
+    }
+
+    if (
+      storedOTP.toString() !==
+      otp.toString()
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid OTP",
+      });
+    }
+
+    const hashedPassword =
+      await bcrypt.hash(
+        newPassword,
+        10
+      );
+
+    await User.findOneAndUpdate(
+      { email },
+      {
+        password:
+          hashedPassword,
+      }
+    );
+
+    await redisClient.del(
+      `resetotp:${email}`
+    );
+
+    res.status(200).json({
+      message:
+        "Password reset successfully",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+
+const login = async (
+  req,
+  res
+) => {
   try {
     const { email, password } =
       req.body;
@@ -244,5 +373,7 @@ module.exports = {
   register,
   verifyOTP,
   resendOTP,
+  forgotPassword,
+  resetPassword,
   login,
 };

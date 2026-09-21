@@ -5,11 +5,17 @@ import { useNavigate, Link } from "react-router-dom";
 function Login() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] =
+    useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [password, setPassword] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -17,19 +23,22 @@ function Login() {
     setError("");
 
     if (!email || !password) {
-      return setError("Please fill all fields");
+      return setError(
+        "Please fill all fields"
+      );
     }
 
     try {
       setLoading(true);
 
-      const response = await API.post(
-        "/auth/login",
-        {
-          email,
-          password,
-        }
-      );
+      const response =
+        await API.post(
+          "/auth/login",
+          {
+            email,
+            password,
+          }
+        );
 
       localStorage.setItem(
         "token",
@@ -39,8 +48,9 @@ function Login() {
       navigate("/");
     } catch (error) {
       setError(
-        error?.response?.data?.message ||
-        "Login failed"
+        error?.response?.data
+          ?.message ||
+          "Login failed"
       );
     } finally {
       setLoading(false);
@@ -123,7 +133,9 @@ function Login() {
               placeholder="Enter email"
               value={email}
               onChange={(e) =>
-                setEmail(e.target.value)
+                setEmail(
+                  e.target.value
+                )
               }
               className="
                 w-full
@@ -155,7 +167,9 @@ function Login() {
               placeholder="Enter password"
               value={password}
               onChange={(e) =>
-                setPassword(e.target.value)
+                setPassword(
+                  e.target.value
+                )
               }
               className="
                 w-full
@@ -169,6 +183,19 @@ function Login() {
                 focus:ring-blue-500
               "
             />
+          </div>
+
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="
+                text-blue-600
+                text-sm
+                hover:underline
+              "
+            >
+              Forgot Password?
+            </Link>
           </div>
 
           <button
