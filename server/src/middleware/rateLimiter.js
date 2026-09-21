@@ -5,7 +5,6 @@ const { getIO } = require("../socket/socket");
 
 const rateLimiter = async (req, res, next) => {
   try {
-    // Get API Key
     const apiKey = req.header("x-api-key");
 
     if (!apiKey) {
@@ -14,7 +13,6 @@ const rateLimiter = async (req, res, next) => {
       });
     }
 
-    // Check API Key
     const keyData = await ApiKey.findOne({
       key: apiKey,
     });
@@ -26,11 +24,10 @@ const rateLimiter = async (req, res, next) => {
     }
 
     const limit = keyData.limit;
+    const window = keyData.window;
 
-    // Redis Key
     const redisKey = `rate_limit:${apiKey}`;
 
-    // Current Count
     let currentCount =
       await redisClient.get(redisKey);
 
@@ -38,7 +35,11 @@ const rateLimiter = async (req, res, next) => {
       ? parseInt(currentCount)
       : 0;
 
-    // BLOCKED REQUEST
+    console.log("API Key:", apiKey);
+    console.log("Current Count:", currentCount);
+    console.log("Limit:", limit);
+    console.log("Window:", window);
+
     if (currentCount >= limit) {
       await ApiKey.findByIdAndUpdate(
         keyData._id,
@@ -51,8 +52,8 @@ const rateLimiter = async (req, res, next) => {
         }
       );
 
-      // Request Log
       await RequestLog.create({
+        userId: keyData.userId,
         apiKey,
         endpoint: req.originalUrl,
         method: req.method,
@@ -60,7 +61,6 @@ const rateLimiter = async (req, res, next) => {
         ipAddress: req.ip,
       });
 
-      // Socket Event
       getIO().emit(
         "request-update",
         {
@@ -69,26 +69,22 @@ const rateLimiter = async (req, res, next) => {
       );
 
       return res.status(429).json({
-        message:
-          "Rate Limit Exceeded",
+        message: "Rate Limit Exceeded",
       });
     }
 
-    // Increment Count
     await redisClient.set(
       redisKey,
       currentCount + 1
     );
 
-    // Expire After 60 Seconds
     if (currentCount === 0) {
       await redisClient.expire(
         redisKey,
-        60
+        window
       );
     }
 
-    // Update API Key Analytics
     await ApiKey.findByIdAndUpdate(
       keyData._id,
       {
@@ -100,8 +96,8 @@ const rateLimiter = async (req, res, next) => {
       }
     );
 
-    // Request Log
     await RequestLog.create({
+      userId: keyData.userId,
       apiKey,
       endpoint: req.originalUrl,
       method: req.method,
@@ -109,7 +105,6 @@ const rateLimiter = async (req, res, next) => {
       ipAddress: req.ip,
     });
 
-    // Socket Event
     getIO().emit(
       "request-update",
       {

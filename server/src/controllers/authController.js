@@ -2,12 +2,13 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 
+const { redisClient } = require("../config/redis");
+const sendOTPEmail = require("../utils/sendEmail");
 
-// Register
+// REGISTER
 
 const register = async (req, res) => {
   try {
-
     const { name, email, password } =
       req.body;
 
@@ -16,7 +17,7 @@ const register = async (req, res) => {
 
     if (exists) {
       return res.status(400).json({
-        message: "User already exists"
+        message: "User already exists",
       });
     }
 
@@ -27,70 +28,166 @@ const register = async (req, res) => {
       await User.create({
         name,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        isVerified: false,
       });
 
-    res.status(201).json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user._id)
-    });
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
+    await redisClient.set(
+      `otp:${email}`,
+      otp
+    );
+
+    await redisClient.expire(
+      `otp:${email}`,
+      300
+    );
+
+    await sendOTPEmail(
+      email,
+      otp
+    );
+
+    res.status(201).json({
+      message:
+        "Registration successful. OTP sent to your email.",
+      email: user.email,
+    });
   } catch (err) {
+    console.log(err);
+
     res.status(500).json({
-      message: err.message
+      message: err.message,
     });
   }
 };
 
+// VERIFY OTP
 
+const verifyOTP = async (
+  req,
+  res
+) => {
+  try {
+    const { email, otp } =
+      req.body;
 
-// Login
+    if (!email || !otp) {
+      return res.status(400).json({
+        message:
+          "Email and OTP are required",
+      });
+    }
+
+    const storedOTP =
+      await redisClient.get(
+        `otp:${email}`
+      );
+
+    if (!storedOTP) {
+      return res.status(400).json({
+        message:
+          "OTP Expired",
+      });
+    }
+
+    if (
+      storedOTP.toString() !==
+      otp.toString()
+    ) {
+      return res.status(400).json({
+        message:
+          "Invalid OTP",
+      });
+    }
+
+    const user =
+      await User.findOne({
+        email,
+      });
+
+    if (!user) {
+      return res.status(404).json({
+        message:
+          "User not found",
+      });
+    }
+
+    user.isVerified = true;
+
+    await user.save();
+
+    await redisClient.del(
+      `otp:${email}`
+    );
+
+    res.status(200).json({
+      message:
+        "Email Verified Successfully",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+// LOGIN
 
 const login = async (req, res) => {
   try {
-
     const { email, password } =
       req.body;
 
     const user =
-      await User.findOne({ email });
+      await User.findOne({
+        email,
+      });
 
     if (
-      user &&
-      await bcrypt.compare(
+      !user ||
+      !(await bcrypt.compare(
         password,
         user.password
-      )
+      ))
     ) {
-
-      res.json({
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        token: generateToken(user._id)
-      });
-
-    } else {
-
-      res.status(401).json({
+      return res.status(401).json({
         message:
-          "Invalid Credentials"
+          "Invalid Credentials",
       });
-
     }
 
+    if (!user.isVerified) {
+      return res.status(401).json({
+        message:
+          "Please verify your email first",
+      });
+    }
+
+    res.status(200).json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      token: generateToken(
+        user._id
+      ),
+    });
   } catch (err) {
+    console.log(err);
 
     res.status(500).json({
-      message: err.message
+      message: err.message,
     });
-
   }
 };
 
 module.exports = {
   register,
-  login
+  verifyOTP,
+  login,
 };

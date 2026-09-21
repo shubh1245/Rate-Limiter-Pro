@@ -55,20 +55,34 @@ function Register() {
     try {
       setLoading(true);
 
-      await API.post(
-        "/auth/register",
-        {
-          name,
-          email,
-          password,
-        }
+      const response =
+        await API.post(
+          "/auth/register",
+          {
+            name,
+            email,
+            password,
+          }
+        );
+
+      alert(
+        response.data.message ||
+          "OTP sent to your email"
       );
 
-      navigate("/login");
+      navigate(
+        "/verify-otp",
+        {
+          state: {
+            email,
+          },
+        }
+      );
     } catch (error) {
       setError(
-        error?.response?.data?.message ||
-        "Registration failed"
+        error?.response?.data
+          ?.message ||
+          "Registration failed"
       );
     } finally {
       setLoading(false);
@@ -96,8 +110,6 @@ function Register() {
           max-w-md
         "
       >
-        {/* Header */}
-
         <div className="text-center mb-8">
           <h1
             className="
@@ -119,8 +131,6 @@ function Register() {
           </p>
         </div>
 
-        {/* Error */}
-
         {error && (
           <div
             className="
@@ -135,8 +145,6 @@ function Register() {
           </div>
         )}
 
-        {/* Form */}
-
         <form
           onSubmit={
             handleRegister
@@ -145,8 +153,6 @@ function Register() {
             space-y-5
           "
         >
-          {/* Name */}
-
           <div>
             <label
               className="
@@ -180,8 +186,6 @@ function Register() {
               "
             />
           </div>
-
-          {/* Email */}
 
           <div>
             <label
@@ -217,8 +221,6 @@ function Register() {
             />
           </div>
 
-          {/* Password */}
-
           <div>
             <label
               className="
@@ -252,8 +254,6 @@ function Register() {
               "
             />
           </div>
-
-          {/* Confirm Password */}
 
           <div>
             <label
@@ -291,8 +291,6 @@ function Register() {
             />
           </div>
 
-          {/* Button */}
-
           <button
             type="submit"
             disabled={loading}
@@ -312,8 +310,6 @@ function Register() {
               : "Register"}
           </button>
         </form>
-
-        {/* Footer */}
 
         <p
           className="

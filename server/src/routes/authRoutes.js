@@ -4,14 +4,18 @@ const router = express.Router();
 
 const {
   register,
-  login
-} = require(
-  "../controllers/authController"
-);
+  login,
+  verifyOTP,
+} = require("../controllers/authController");
 
 router.post(
   "/register",
   register
+);
+
+router.post(
+  "/verify-otp",
+  verifyOTP
 );
 
 router.post(

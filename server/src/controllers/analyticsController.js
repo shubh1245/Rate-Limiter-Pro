@@ -1,24 +1,25 @@
 const RequestLog = require("../models/RequestLog");
 const ApiKey = require("../models/ApiKey");
 
-
-// Dashboard Summary
-
 const getDashboardSummary = async (
   req,
   res
 ) => {
   try {
     const totalRequests =
-      await RequestLog.countDocuments();
+      await RequestLog.countDocuments({
+        userId: req.user._id,
+      });
 
     const successfulRequests =
       await RequestLog.countDocuments({
+        userId: req.user._id,
         status: "SUCCESS",
       });
 
     const blockedRequests =
       await RequestLog.countDocuments({
+        userId: req.user._id,
         status: "BLOCKED",
       });
 
@@ -34,9 +35,6 @@ const getDashboardSummary = async (
   }
 };
 
-
-// Top API Keys
-
 const getTopApiKeys = async (
   req,
   res
@@ -44,6 +42,11 @@ const getTopApiKeys = async (
   try {
     const topKeys =
       await RequestLog.aggregate([
+        {
+          $match: {
+            userId: req.user._id,
+          },
+        },
         {
           $group: {
             _id: "$apiKey",
@@ -70,9 +73,6 @@ const getTopApiKeys = async (
   }
 };
 
-
-// Daily Traffic Analytics
-
 const getRequestsPerDay = async (
   req,
   res
@@ -81,13 +81,16 @@ const getRequestsPerDay = async (
     const stats =
       await RequestLog.aggregate([
         {
+          $match: {
+            userId: req.user._id,
+          },
+        },
+        {
           $group: {
             _id: {
               $dateToString: {
-                format:
-                  "%Y-%m-%d",
-                date:
-                  "$createdAt",
+                format: "%Y-%m-%d",
+                date: "$createdAt",
               },
             },
             requests: {
@@ -110,16 +113,15 @@ const getRequestsPerDay = async (
   }
 };
 
-
-// Request Logs
-
 const getRequestLogs = async (
   req,
   res
 ) => {
   try {
     const logs =
-      await RequestLog.find()
+      await RequestLog.find({
+        userId: req.user._id,
+      })
         .sort({
           createdAt: -1,
         })
@@ -133,14 +135,16 @@ const getRequestLogs = async (
   }
 };
 
-
-// Endpoint Analytics
-
 const getEndpointAnalytics =
   async (req, res) => {
     try {
       const endpointData =
         await RequestLog.aggregate([
+          {
+            $match: {
+              userId: req.user._id,
+            },
+          },
           {
             $group: {
               _id: "$endpoint",
@@ -162,49 +166,35 @@ const getEndpointAnalytics =
       res.json(endpointData);
     } catch (error) {
       res.status(500).json({
-        message:
-          error.message,
+        message: error.message,
       });
     }
   };
-
-
-// API Key Analytics
 
 const getApiKeyAnalytics =
   async (req, res) => {
     try {
       const apiKeys =
-        await ApiKey.find()
-          .sort({
-            createdAt: -1,
-          });
+        await ApiKey.find({
+          userId: req.user._id,
+        }).sort({
+          createdAt: -1,
+        });
 
       const analytics =
         apiKeys.map((key) => ({
           _id: key._id,
-
           key: key.key,
-
           totalRequests:
             key.totalRequests || 0,
-
           successfulRequests:
-            key.successfulRequests ||
-            0,
-
+            key.successfulRequests || 0,
           blockedRequests:
-            key.blockedRequests ||
-            0,
-
+            key.blockedRequests || 0,
           lastUsed:
-            key.lastUsed ||
-            "Never",
-
+            key.lastUsed || "Never",
           status:
-            key.status ||
-            "Active",
-
+            key.status || "Active",
           createdAt:
             key.createdAt,
         }));
@@ -219,7 +209,6 @@ const getApiKeyAnalytics =
       });
     }
   };
-
 
 module.exports = {
   getDashboardSummary,

@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const apiKeySchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
     name: {
       type: String,
       default: "Default API Key",
@@ -35,6 +41,16 @@ const apiKeySchema = new mongoose.Schema(
     status: {
       type: String,
       default: "Active",
+    },
+
+    limit: {
+      type: Number,
+      default: 1,
+    },
+
+    window: {
+      type: Number,
+      default: 60,
     },
   },
   {

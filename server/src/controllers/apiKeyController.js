@@ -1,53 +1,67 @@
 const ApiKey = require("../models/ApiKey");
 const generateApiKey = require("../utils/generateApiKey");
 
-// Create API Key
 const createApiKey = async (req, res) => {
   try {
     const apiKey = await ApiKey.create({
       userId: req.user._id,
       key: generateApiKey(),
-      limit: 100,
+      limit: 3,
       window: 60,
+      status: "Active",
     });
 
     res.status(201).json(apiKey);
   } catch (error) {
     console.log(error);
+
     res.status(500).json({
-      message: "Failed to create API Key",
+      message: error.message,
     });
   }
 };
 
-// Get All API Keys of Logged In User
 const getApiKeys = async (req, res) => {
   try {
     const keys = await ApiKey.find({
       userId: req.user._id,
-    }).sort({ createdAt: -1 });
+    }).sort({
+      createdAt: -1,
+    });
 
-    res.json(keys);
+    res.status(200).json(keys);
   } catch (error) {
     console.log(error);
+
     res.status(500).json({
-      message: "Failed to fetch API Keys",
+      message: error.message,
     });
   }
 };
 
-// Delete API Key
 const deleteApiKey = async (req, res) => {
   try {
-    await ApiKey.findByIdAndDelete(req.params.id);
+    const apiKey = await ApiKey.findOne({
+      _id: req.params.id,
+      userId: req.user._id,
+    });
 
-    res.json({
-      message: "API Key Deleted",
+    if (!apiKey) {
+      return res.status(404).json({
+        message: "API Key not found",
+      });
+    }
+
+    await apiKey.deleteOne();
+
+    res.status(200).json({
+      message: "API Key deleted successfully",
     });
   } catch (error) {
     console.log(error);
+
     res.status(500).json({
-      message: "Delete Failed",
+      message: error.message,
     });
   }
 };

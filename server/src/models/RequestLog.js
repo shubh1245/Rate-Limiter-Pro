@@ -2,32 +2,38 @@ const mongoose = require("mongoose");
 
 const requestLogSchema = new mongoose.Schema(
   {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
     apiKey: {
       type: String,
-      required: true
+      required: true,
     },
 
     endpoint: {
       type: String,
-      required: true
+      required: true,
     },
 
     method: {
       type: String,
-      required: true
+      required: true,
     },
 
     status: {
       type: String,
-      enum: ["SUCCESS", "BLOCKED"]
+      enum: ["SUCCESS", "BLOCKED"],
     },
 
     ipAddress: {
-      type: String
-    }
+      type: String,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
