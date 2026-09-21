@@ -137,6 +137,60 @@ const verifyOTP = async (
   }
 };
 
+// RESEND OTP
+
+const resendOTP = async (
+  req,
+  res
+) => {
+  try {
+    const { email } =
+      req.body;
+
+    const user =
+      await User.findOne({
+        email,
+      });
+
+    if (!user) {
+      return res.status(404).json({
+        message:
+          "User not found",
+      });
+    }
+
+    const otp = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+
+    await redisClient.set(
+      `otp:${email}`,
+      otp
+    );
+
+    await redisClient.expire(
+      `otp:${email}`,
+      300
+    );
+
+    await sendOTPEmail(
+      email,
+      otp
+    );
+
+    res.status(200).json({
+      message:
+        "OTP sent successfully",
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
 // LOGIN
 
 const login = async (req, res) => {
@@ -189,5 +243,6 @@ const login = async (req, res) => {
 module.exports = {
   register,
   verifyOTP,
+  resendOTP,
   login,
 };

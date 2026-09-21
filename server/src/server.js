@@ -5,44 +5,96 @@ const cors = require("cors");
 const http = require("http");
 
 const connectDB = require("./config/db");
-const { connectRedis } = require("./config/redis");
+const {
+  connectRedis,
+} = require("./config/redis");
 
-const { initSocket } = require("./socket/socket");
+const {
+  initSocket,
+} = require("./socket/socket");
 
-const authRoutes = require("./routes/authRoutes");
-const apiKeyRoutes = require("./routes/apiKeyRoutes");
-const testRoutes = require("./routes/testRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
-const demoRoutes = require("./routes/demoRoutes");
+const authRoutes = require(
+  "./routes/authRoutes"
+);
+
+const apiKeyRoutes = require(
+  "./routes/apiKeyRoutes"
+);
+
+const testRoutes = require(
+  "./routes/testRoutes"
+);
+
+const analyticsRoutes = require(
+  "./routes/analyticsRoutes"
+);
+
+const demoRoutes = require(
+  "./routes/demoRoutes"
+);
+
+// Database & Redis
 
 connectDB();
 connectRedis();
 
 const app = express();
 
+// Middleware
+
 app.use(cors());
+
 app.use(express.json());
 
-app.use("/api/auth", authRoutes);
+// Routes
 
-app.use("/api/keys", apiKeyRoutes);
+app.use(
+  "/api/auth",
+  authRoutes
+);
 
-app.use("/api/test", testRoutes);
+app.use(
+  "/api/keys",
+  apiKeyRoutes
+);
 
-app.use("/api/analytics", analyticsRoutes);
+app.use(
+  "/api/test",
+  testRoutes
+);
 
-app.use("/api", demoRoutes);
+app.use(
+  "/api/analytics",
+  analyticsRoutes
+);
+
+app.use(
+  "/api/demo",
+  demoRoutes
+);
+
+// Health Check
 
 app.get("/", (req, res) => {
-  res.send("RateLimiter Pro API Running");
+  res.send(
+    "RateLimiter Pro API Running 🚀"
+  );
 });
 
-const PORT = process.env.PORT || 5000;
+// Server
 
-const server = http.createServer(app);
+const PORT =
+  process.env.PORT || 5000;
+
+const server =
+  http.createServer(app);
+
+// Socket.IO
 
 initSocket(server);
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(
+    `Server running on port ${PORT}`
+  );
 });

@@ -182,22 +182,48 @@ const getApiKeyAnalytics =
         });
 
       const analytics =
-        apiKeys.map((key) => ({
-          _id: key._id,
-          key: key.key,
-          totalRequests:
-            key.totalRequests || 0,
-          successfulRequests:
-            key.successfulRequests || 0,
-          blockedRequests:
-            key.blockedRequests || 0,
-          lastUsed:
-            key.lastUsed || "Never",
-          status:
-            key.status || "Active",
-          createdAt:
-            key.createdAt,
-        }));
+        apiKeys.map((key) => {
+          const THIRTY_DAYS =
+            30 *
+            24 *
+            60 *
+            60 *
+            1000;
+
+          let status =
+            "Never Used";
+
+          if (key.lastUsed) {
+            status =
+              Date.now() -
+                new Date(
+                  key.lastUsed
+                ).getTime() <
+              THIRTY_DAYS
+                ? "Active"
+                : "Inactive";
+          }
+
+          return {
+            _id: key._id,
+            key: key.key,
+            totalRequests:
+              key.totalRequests ||
+              0,
+            successfulRequests:
+              key.successfulRequests ||
+              0,
+            blockedRequests:
+              key.blockedRequests ||
+              0,
+            lastUsed:
+              key.lastUsed ||
+              "Never",
+            status,
+            createdAt:
+              key.createdAt,
+          };
+        });
 
       res.json(analytics);
     } catch (error) {

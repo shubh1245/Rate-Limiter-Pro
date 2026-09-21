@@ -17,9 +17,10 @@ function Register() {
   const [password, setPassword] =
     useState("");
 
-  const [confirmPassword,
-    setConfirmPassword] =
-    useState("");
+  const [
+    confirmPassword,
+    setConfirmPassword,
+  ] = useState("");
 
   const [loading, setLoading] =
     useState(false);
@@ -27,7 +28,9 @@ function Register() {
   const [error, setError] =
     useState("");
 
-  const handleRegister = async (e) => {
+  const handleRegister = async (
+    e
+  ) => {
     e.preventDefault();
 
     setError("");
@@ -166,6 +169,7 @@ function Register() {
 
             <input
               type="text"
+              autoComplete="name"
               placeholder="Enter Name"
               value={name}
               onChange={(e) =>
@@ -200,6 +204,7 @@ function Register() {
 
             <input
               type="email"
+              autoComplete="email"
               placeholder="Enter Email"
               value={email}
               onChange={(e) =>
@@ -234,6 +239,7 @@ function Register() {
 
             <input
               type="password"
+              autoComplete="new-password"
               placeholder="Enter Password"
               value={password}
               onChange={(e) =>
@@ -268,6 +274,7 @@ function Register() {
 
             <input
               type="password"
+              autoComplete="new-password"
               placeholder="Confirm Password"
               value={
                 confirmPassword
@@ -303,6 +310,7 @@ function Register() {
               rounded-lg
               font-semibold
               transition
+              disabled:bg-gray-400
             "
           >
             {loading
@@ -318,8 +326,7 @@ function Register() {
             text-slate-600
           "
         >
-          Already have an
-          account?{" "}
+          Already have an account?{" "}
           <Link
             to="/login"
             className="

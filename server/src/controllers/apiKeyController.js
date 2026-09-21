@@ -6,7 +6,7 @@ const createApiKey = async (req, res) => {
     const apiKey = await ApiKey.create({
       userId: req.user._id,
       key: generateApiKey(),
-      limit: 3,
+      limit: 10,
       window: 60,
       status: "Active",
     });

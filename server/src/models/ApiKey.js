@@ -45,7 +45,7 @@ const apiKeySchema = new mongoose.Schema(
 
     limit: {
       type: Number,
-      default: 1,
+      default: 10,
     },
 
     window: {
