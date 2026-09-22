@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://rate-limiter-pro-backend.onrender.com/",
+  baseURL: "https://rate-limiter-pro-backend.onrender.com/api",
 });
 
 API.interceptors.request.use(
