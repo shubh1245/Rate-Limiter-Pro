@@ -7,12 +7,19 @@ dns.setServers([
 ]);
 
 const connectDB = async () => {
+  if (!process.env.MONGO_URI) {
+    console.log(
+      "MONGO_URI is not set. Add it in your Render service's Environment tab."
+    );
+    process.exit(1);
+  }
+
   try {
     await mongoose.connect(process.env.MONGO_URI);
 
     console.log("MongoDB Connected");
   } catch (err) {
-    console.log(err.message);
+    console.log("MongoDB connection failed:", err.message);
 
     process.exit(1);
   }

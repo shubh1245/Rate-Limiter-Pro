@@ -1,5 +1,9 @@
 require("dotenv").config();
 
+process.on("unhandledRejection", (reason) => {
+  console.log("Unhandled Promise Rejection:", reason);
+});
+
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
@@ -42,7 +46,11 @@ const app = express();
 
 // Middleware
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || "http://localhost:5173",
+  })
+);
 
 app.use(express.json());
 
